@@ -167,6 +167,51 @@
         if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         tg.sendData("use_" + item);
     }
+    // URL твоего сервера (когда выложишь на Render/PythonAnywhere, замени здесь)
+const SERVER_URL = 'http://твой-ip-адрес:5000';
+
+async function shoot(target) {
+    const gun = document.getElementById('main-gun');
+    
+    // 1. Анимация нажатия (взвод курка визуально)
+    gun.style.transform = 'scale(0.9) rotate(-5deg)';
+    
+    // 2. Запрос к серверу
+    try {
+        const response = await fetch(`${SERVER_URL}/move`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: tg.initDataUnsafe.user.id,
+                action: target
+            })
+        });
+        const data = await response.json();
+
+        // 3. Обработка результата БЕЗ закрытия окна
+        setTimeout(() => {
+            if (data.result === 'hit') {
+                triggerShake(); // Тряска экрана
+                showBlood();    // Вспышка красного
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            } else {
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            }
+            
+            // Обновляем HP визуально (патроны на экране)
+            updateVisualHP(data.player_hp, data.enemy_hp);
+            gun.style.transform = 'scale(1)'; // Возвращаем револьвер
+        }, 300);
+
+    } catch (e) {
+        alert("Ошибка связи с сервером!");
+    }
+}
+
+function triggerShake() {
+    document.body.style.animation = 'shake 0.3s';
+    setTimeout(() => document.body.style.animation = '', 300);
+}
 </script>
 
 </body>
